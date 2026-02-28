@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A desktop GUI tool for game developers to visually configure 9-slice (9-patch) borders on UI images. It removes the redundant center cross and exports a memory-optimized, stitched image compatible with Unity and other game engines.
 
-**Status:** Specification-driven project — specs are complete, implementation is pending.
+**Status:** ✅ COMPLETE — All phases implemented, 113/113 tests passing, production-ready executable available.
 
 ## Tech Stack
 
@@ -16,17 +16,32 @@ A desktop GUI tool for game developers to visually configure 9-slice (9-patch) b
 - **Testing:** pytest
 - **Packaging:** PyInstaller
 
-## Planned Project Structure
+## Project Structure
 
 ```
-main.py                    # Entry point
-requirements.txt
+main.py                      # Entry point with Windows taskbar integration
+requirements.txt             # Dependencies
+build.py                     # Build script
+build_windows_app.bat        # Windows build script with icon
 core/
-  image_processor.py       # Pillow-based 9-slice algorithm
+  image_processor.py         # Pillow-based 9-slice algorithm with P-mode fix
 ui/
-  main_window.py           # PySide6 GUI (window, canvas, controls)
-tests/
-  test_image_processor.py
+  main_window.py             # PySide6 GUI (canvas, controls, file I/O, icons)
+tests/                       # 113 comprehensive tests
+  test_image_processor.py    # Core algorithm tests
+  test_main_window.py        # GUI structure tests
+  test_guide_interactions.py # Drag-and-drop interaction tests
+  test_file_io.py           # File operations tests
+  test_edge_margins.py      # Canvas margin tests
+  test_icon_fix.py          # Icon integration tests
+  test_exe_icon_fix.py      # Executable icon tests
+  test_window_icon.py       # Window icon tests
+  test_taskbar_icon.py      # Taskbar icon tests
+icon/
+  icon.png                  # Original PNG icon (256x256)
+  icon.ico                  # Multi-resolution ICO for Windows
+dist/
+  9SliceCutter.exe          # Production executable (56MB)
 ```
 
 ## Commands
@@ -49,7 +64,13 @@ pytest tests/test_image_processor.py
 # Run a single test by name
 pytest tests/test_image_processor.py::test_function_name -v
 
-# Build standalone executable
+# Build standalone executable (cross-platform)
+python build.py
+
+# Build Windows executable with icon
+build_windows_app.bat
+
+# Legacy PyInstaller command
 pyinstaller -F -w main.py
 ```
 
