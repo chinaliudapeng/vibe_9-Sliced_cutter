@@ -434,6 +434,7 @@ class MainWindow(QMainWindow):
         self.resize(1100, 700)
 
         self._source_image: Image.Image | None = None
+        self._source_path: str | None = None  # path of the currently loaded file
         self._updating: bool = False  # guard against circular signal loops
 
         # --- Splitter ---
@@ -469,6 +470,12 @@ class MainWindow(QMainWindow):
         toolbar_row.addWidget(self._open_btn)
         toolbar_row.addStretch()
 
+        self._overwrite_btn = QPushButton("覆盖保存 (Save)")
+        self._overwrite_btn.setObjectName("overwrite_btn")
+        self._overwrite_btn.setFixedHeight(30)
+        self._overwrite_btn.setEnabled(False)
+        toolbar_row.addWidget(self._overwrite_btn)
+
         self._save_btn = QPushButton("另存为 (Save As)")
         self._save_btn.setObjectName("save_btn")
         self._save_btn.setFixedHeight(30)
@@ -483,6 +490,7 @@ class MainWindow(QMainWindow):
         self._controls.margins_changed.connect(self._on_margins_changed)
         self._canvas.margins_changed.connect(self._on_canvas_margins_changed)
         self._open_btn.clicked.connect(self._on_open_clicked)
+        self._overwrite_btn.clicked.connect(self._on_overwrite_save_clicked)
         self._save_btn.clicked.connect(self._on_save_clicked)
 
         # Enable drag-and-drop
@@ -512,9 +520,11 @@ class MainWindow(QMainWindow):
         """Load a source image from disk and reset the UI."""
         image = Image.open(path)
         self._source_image = image
+        self._source_path = path
         self._canvas.set_image(image)
         self._controls.set_image_limits(*image.size)
         self._controls.reset_values()
+        self._overwrite_btn.setEnabled(True)
         self._save_btn.setEnabled(True)
         self._update_preview()
 
@@ -566,15 +576,43 @@ class MainWindow(QMainWindow):
         if path:
             self._load_image(path)
 
+    def _on_overwrite_save_clicked(self) -> None:
+        """Overwrite the original source file after user confirmation."""
+        if self._source_image is None or self._source_path is None:
+            return
+        from PySide6.QtWidgets import QMessageBox
+        reply = QMessageBox.warning(
+            self,
+            "覆盖保存",
+            f"确认要覆盖原文件吗？\n{self._source_path}",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if reply != QMessageBox.Yes:
+            return
+        t = self._controls.top
+        b = self._controls.bottom
+        l = self._controls.left
+        r = self._controls.right
+        W, H = self._source_image.size
+        if l + r >= W or t + b >= H:
+            QMessageBox.warning(self, "错误", "边距设置无效，请检查后重试。")
+            return
+        result = slice_image(self._source_image, t, b, l, r)
+        result.save(self._source_path)
+
     def _on_save_clicked(self) -> None:
+        """Save As: prompt the user for a new file path."""
         if self._source_image is None:
             return
+        import os
         from PySide6.QtWidgets import QFileDialog, QMessageBox
 
+        default_dir = os.path.dirname(self._source_path) if self._source_path else ""
         path, _ = QFileDialog.getSaveFileName(
             self,
             "另存为",
-            "",
+            default_dir,
             "PNG Image (*.png)",
         )
         if not path:
@@ -596,7 +634,10 @@ class MainWindow(QMainWindow):
 
     def dragEnterEvent(self, event) -> None:
         if event.mimeData().hasUrls():
-            event.acceptProposedAction()
+            for url in event.mimeData().urls():
+                if url.toLocalFile().lower().endswith((".png", ".jpg", ".jpeg")):
+                    event.acceptProposedAction()
+                    return
 
     def dropEvent(self, event) -> None:
         urls = event.mimeData().urls()
