@@ -71,12 +71,12 @@
 - [x] 提交Git Commit。
 - [x] **更新本文件，将 Phase 8 标记为 [x]，然后退出！**
 
-##  Phase 9: bug-001Fix,测试图片目录下预览图片与截取的图片为黑色的不符合预期 (对应 spec 07)
+## ✅ Phase 9: bug-001Fix,测试图片目录下预览图片与截取的图片为黑色的不符合预期 (对应 spec 07)
 
-- [ ] 修复这个BUG.
-- [ ] 测试生成的bat文件是否能正常运行（不带控制台黑框）。
-- [ ] 提交Git Commit。
-- [ ] **更新本文件，将 Phase 9 标记为 [x]，然后退出!**
+- [x] 修复这个BUG.
+- [x] 测试生成的bat文件是否能正常运行（不带控制台黑框）。
+- [x] 提交Git Commit。
+- [x] **更新本文件，将 Phase 9 标记为 [x]，然后退出!**
 
 ---
 # 📝 AI 运行日志 (Agent Notes)
@@ -90,3 +90,4 @@
 - [Phase 6 完成] 实现画布10px边缘边距（contentsMargins 10px 四边），新增 test_edge_margins.py 测试通过（86/86），已提交 Git。
 - [Phase 7 完成] 创建 build.py 构建脚本（python -m PyInstaller -F -w --name 9SliceCutter main.py），成功生成 dist/9SliceCutter.exe（54MB 单文件无控制台），已验证可正常启动，已提交 Git。
 - [Phase 8 完成] 创建 build_windows_app.bat Windows批处理脚本，集成 icon/icon.png 图标支持，包含完整的错误检查和构建状态报告。成功生成带图标的54MB exe文件，验证可正常启动且无控制台窗口，已提交 Git。下一步：执行 Phase 9，修复测试图片目录下预览图片与截取的图片为黑色的不符合预期的bug。
+- [Phase 9 完成] 修复了调色板模式(P mode)PNG图片在9-slice处理时产生全黑结果的bug。通过在slice_image函数中将调色板图片转换为RGBA模式来避免调色板索引问题。所有86个现有测试通过，验证修复有效且未破坏现有功能，已提交Git。项目核心功能已全部实现并通过测试。
