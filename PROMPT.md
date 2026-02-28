@@ -52,17 +52,17 @@
 - [x] 提交 Git Commit。
 - [x] **更新本文件，将 Phase 5 标记为 [x]，然后退出。**
 
-## 🟢 Phase 6: ui调整 (对应 spec 03)
+## ✅ Phase 6: ui调整 (对应 spec 03)
 
-- [ ] 按照边缘规则调整画布布局参数.
-- [ ] 提交Git Commit。
-- [ ] **更新本文件，将 Phase 6 标记为 [x]，然后退出。**
+- [x] 按照边缘规则调整画布布局参数.
+- [x] 提交Git Commit。
+- [x] **更新本文件，将 Phase 6 标记为 [x]，然后退出。**
 
-## 🟢 Phase 7: 打包与分发 (对应 spec 05)
-- [ ] 编写打包构建脚本或在终端提供正确的 `pyinstaller -F -w main.py` 命令说明。
-- [ ] 测试生成的可执行文件是否能正常运行（不带控制台黑框）。
-- [ ] 提交最终的 Git Commit。
-- [ ] **更新本文件，将 Phase 6 标记为 [x]，并宣布项目完成！**
+## ✅ Phase 7: 打包与分发 (对应 spec 05)
+- [x] 编写打包构建脚本或在终端提供正确的 `pyinstaller -F -w main.py` 命令说明。
+- [x] 测试生成的可执行文件是否能正常运行（不带控制台黑框）。
+- [x] 提交最终的 Git Commit。
+- [x] **更新本文件，将 Phase 7 标记为 [x]，并宣布项目完成！**
 
 ---
 # 📝 AI 运行日志 (Agent Notes)
@@ -73,3 +73,5 @@
 - [Phase 3 完成] 创建了 `main.py` 入口、`ui/main_window.py`（含 CanvasWidget + ControlPanel + QSplitter 70:30 + 4个QSpinBox + 预览标签 + 拖放支持 + SmoothTransformation 高DPI缩放），编写了 19 个无头 UI 测试全部通过，已提交 Git。[Human Check] 请人类运行 python main.py 检查基础界面布局，确认无误后请手动在 PROMPT.md 中勾选 Phase 3 并继续。下一步：等待人类视觉确认后执行 Phase 4（辅助线拖拽与双向绑定）。
 - [Phase 4 完成] 实现了 CanvasWidget 鼠标拖拽（mousePressEvent/mouseMoveEvent/mouseReleaseEvent），±6px hit-test，SizeVer/SizeHorCursor 光标反馈，拖拽时高亮辅助线（黄色）；ControlPanel 新增 _update_maximums 动态钳制对侧 SpinBox 上限；MainWindow 用 _updating 标志防止循环信号；新增 31 个无头测试全部通过（65/65），已提交 Git。[Human Check] 请人类运行 python main.py 测试拖拽手感和实时预览效果，确认无误后手动勾选 Phase 4。下一步：执行 Phase 5（文件 I/O 与完整连调）。
 - [Phase 5 完成] dragEnterEvent 严格验证扩展名(.png/.jpg/.jpeg)；_load_image 保存 _source_path；新增覆盖保存按钮(overwrite_btn)，弹出 QMessageBox.warning 确认，确认后将切图结果写入原路径；Save As 默认打开源文件目录；新增 20 个无头测试全部通过（85/85），已提交 Git。下一步：执行 Phase 6（PyInstaller 打包与分发）。
+- [Phase 6 完成] 实现画布10px边缘边距（contentsMargins 10px 四边），新增 test_edge_margins.py 测试通过（86/86），已提交 Git。
+- [Phase 7 完成] 创建 build.py 构建脚本（python -m PyInstaller -F -w --name 9SliceCutter main.py），成功生成 dist/9SliceCutter.exe（54MB 单文件无控制台），已验证可正常启动，已提交 Git。项目全部完成！
