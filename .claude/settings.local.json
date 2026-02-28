@@ -5,7 +5,9 @@
       "Bash(git:*)",
       "Bash(pip install:*)",
       "Bash(python:*)",
-      "Bash(pip:*)"
+      "Bash(pip:*)",
+      "Bash(pyinstaller:*)",
+      "Bash(start:*)"
     ]
   }
 }
