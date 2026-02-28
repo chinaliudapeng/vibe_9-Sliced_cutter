@@ -3,7 +3,7 @@ Main window for the 9-slice cutter GUI tool.
 
 Layout:
   - QSplitter (horizontal, 70:30)
-    - Left:  CanvasWidget  — displays the source image + guide lines
+    - Left:  CanvasWidget  — displays the source image + draggable guide lines
     - Right: ControlPanel  — 4 QSpinBox controls + real-time preview
 """
 
@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
     QSizePolicy, QFrame,
 )
 from PySide6.QtCore import Qt, Signal, QSize
-from PySide6.QtGui import QPixmap, QPainter, QColor, QPen
+from PySide6.QtGui import QPixmap, QPainter, QColor, QPen, QCursor
 
 from core.image_processor import slice_image
 from PIL import Image
@@ -25,12 +25,18 @@ from PIL.ImageQt import ImageQt
 # ---------------------------------------------------------------------------
 
 class CanvasWidget(QWidget):
-    """Displays the loaded source image and will host draggable guide lines."""
+    """Displays the loaded source image and hosts draggable guide lines."""
+
+    # Emitted when guide lines are dragged; values in image-pixel space
+    margins_changed = Signal(int, int, int, int)  # top, bottom, left, right
+
+    _GRAB_PX = 6  # screen-pixel tolerance for hit-testing a guide line
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.setMinimumSize(200, 200)
+        self.setMouseTracking(True)  # receive move events without held button
 
         self._source_pixmap: QPixmap | None = None
         self._img_w: int = 0
@@ -47,6 +53,9 @@ class CanvasWidget(QWidget):
         self._display_rect_y: int = 0
         self._display_scale: float = 1.0
 
+        # Dragging state: None or one of "top" | "bottom" | "left" | "right"
+        self._dragging: str | None = None
+
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
@@ -54,13 +63,12 @@ class CanvasWidget(QWidget):
     def set_image(self, image: Image.Image) -> None:
         """Load a PIL Image for display."""
         self._img_w, self._img_h = image.size
-        # Convert to QPixmap via ImageQt
         qt_image = ImageQt(image.convert("RGBA"))
         self._source_pixmap = QPixmap.fromImage(qt_image)
         self.update()
 
     def set_margins(self, top: int, bottom: int, left: int, right: int) -> None:
-        """Update guide-line positions from spinbox values."""
+        """Update guide-line positions from spinbox values (no signal emitted)."""
         self._top = top
         self._bottom = bottom
         self._left = left
@@ -68,7 +76,134 @@ class CanvasWidget(QWidget):
         self.update()
 
     # ------------------------------------------------------------------
-    # Qt overrides
+    # Mouse events — guide-line dragging
+    # ------------------------------------------------------------------
+
+    def mousePressEvent(self, event) -> None:
+        if self._source_pixmap is None or event.button() != Qt.LeftButton:
+            return
+        mx, my = event.position().x(), event.position().y()
+        guide = self._hit_test(mx, my)
+        if guide:
+            self._dragging = guide
+            self.update()
+
+    def mouseMoveEvent(self, event) -> None:
+        if self._source_pixmap is None:
+            return
+        mx, my = event.position().x(), event.position().y()
+        if self._dragging:
+            self._process_drag(mx, my)
+        else:
+            # Update cursor based on hover position
+            guide = self._hit_test(mx, my)
+            if guide in ("top", "bottom"):
+                self.setCursor(Qt.SizeVerCursor)
+            elif guide in ("left", "right"):
+                self.setCursor(Qt.SizeHorCursor)
+            else:
+                self.unsetCursor()
+
+    def mouseReleaseEvent(self, event) -> None:
+        if event.button() == Qt.LeftButton and self._dragging:
+            self._dragging = None
+            self.unsetCursor()
+            self.update()
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    def _guide_screen_coords(self):
+        """Return screen coordinates of all four guide lines."""
+        ox, oy = self._display_rect_x, self._display_rect_y
+        s = self._display_scale
+        top_y    = oy + int(self._top * s)
+        bottom_y = oy + int((self._img_h - self._bottom) * s)
+        left_x   = ox + int(self._left * s)
+        right_x  = ox + int((self._img_w - self._right) * s)
+        return top_y, bottom_y, left_x, right_x
+
+    def _hit_test(self, mx: float, my: float) -> str | None:
+        """Return the name of the guide line hit by (mx, my), or None."""
+        if not self._img_w or not self._img_h or self._display_scale == 0:
+            return None
+
+        ox, oy = self._display_rect_x, self._display_rect_y
+        s = self._display_scale
+        disp_w = int(self._img_w * s)
+        disp_h = int(self._img_h * s)
+
+        top_y, bottom_y, left_x, right_x = self._guide_screen_coords()
+        g = self._GRAB_PX
+
+        img_left, img_right = ox, ox + disp_w
+        img_top, img_bottom = oy, oy + disp_h
+
+        # Horizontal guides — check within x-extent of image
+        if img_left <= mx <= img_right:
+            if abs(my - top_y) <= g:
+                return "top"
+            if abs(my - bottom_y) <= g:
+                return "bottom"
+
+        # Vertical guides — check within y-extent of image
+        if img_top <= my <= img_bottom:
+            if abs(mx - left_x) <= g:
+                return "left"
+            if abs(mx - right_x) <= g:
+                return "right"
+
+        return None
+
+    def _process_drag(self, mx: float, my: float) -> None:
+        """Compute new margin from current drag position and emit if changed."""
+        ox, oy = self._display_rect_x, self._display_rect_y
+        s = self._display_scale
+        if s == 0:
+            return
+
+        W, H = self._img_w, self._img_h
+        changed = False
+
+        if self._dragging == "top":
+            img_y = int((my - oy) / s)
+            new_top = max(0, min(img_y, H - self._bottom - 1))
+            if new_top != self._top:
+                self._top = new_top
+                changed = True
+
+        elif self._dragging == "bottom":
+            # Bottom guide sits at image-space position (H - bottom)
+            pos = int((my - oy) / s)
+            pos = max(self._top + 1, min(pos, H))
+            new_bottom = max(0, H - pos)
+            if new_bottom != self._bottom:
+                self._bottom = new_bottom
+                changed = True
+
+        elif self._dragging == "left":
+            img_x = int((mx - ox) / s)
+            new_left = max(0, min(img_x, W - self._right - 1))
+            if new_left != self._left:
+                self._left = new_left
+                changed = True
+
+        elif self._dragging == "right":
+            # Right guide sits at image-space position (W - right)
+            pos = int((mx - ox) / s)
+            pos = max(self._left + 1, min(pos, W))
+            new_right = max(0, W - pos)
+            if new_right != self._right:
+                self._right = new_right
+                changed = True
+
+        if changed:
+            self.margins_changed.emit(self._top, self._bottom, self._left, self._right)
+            self.update()
+
+    # ------------------------------------------------------------------
+    # Qt overrides — painting
     # ------------------------------------------------------------------
 
     def paintEvent(self, event) -> None:
@@ -79,7 +214,6 @@ class CanvasWidget(QWidget):
         painter.fillRect(self.rect(), QColor(60, 60, 60))
 
         if self._source_pixmap is None:
-            # Placeholder text
             painter.setPen(QColor(150, 150, 150))
             painter.drawText(
                 self.rect(),
@@ -108,35 +242,35 @@ class CanvasWidget(QWidget):
         )
         painter.drawPixmap(self._display_rect_x, self._display_rect_y, scaled)
 
-        # Draw guide lines and center-cross mask if image is loaded
         if self._img_w > 0 and self._img_h > 0:
             self._draw_guides(painter, disp_w, disp_h)
 
     def _draw_guides(self, painter: QPainter, disp_w: int, disp_h: int) -> None:
         ox, oy = self._display_rect_x, self._display_rect_y
-        s = self._display_scale
+        top_y, bottom_y, left_x, right_x = self._guide_screen_coords()
 
-        top_y    = oy + int(self._top * s)
-        bottom_y = oy + int((self._img_h - self._bottom) * s)
-        left_x   = ox + int(self._left * s)
-        right_x  = ox + int((self._img_w - self._right) * s)
-
-        # Semi-transparent center-cross mask
+        # Semi-transparent center-cross mask (5 rectangles for the cross arms + center)
         mask_color = QColor(200, 0, 0, 70)
-        painter.fillRect(left_x, oy,    right_x - left_x, top_y - oy,   mask_color)
-        painter.fillRect(left_x, bottom_y, right_x - left_x, (oy + disp_h) - bottom_y, mask_color)
-        painter.fillRect(ox, top_y,    left_x - ox,       bottom_y - top_y, mask_color)
-        painter.fillRect(right_x, top_y, (ox + disp_w) - right_x, bottom_y - top_y, mask_color)
-        # The center cross interior itself
-        painter.fillRect(left_x, top_y, right_x - left_x, bottom_y - top_y, mask_color)
+        painter.fillRect(left_x,  oy,        right_x - left_x, top_y - oy,             mask_color)
+        painter.fillRect(left_x,  bottom_y,  right_x - left_x, (oy + disp_h) - bottom_y, mask_color)
+        painter.fillRect(ox,      top_y,     left_x - ox,       bottom_y - top_y,       mask_color)
+        painter.fillRect(right_x, top_y,     (ox + disp_w) - right_x, bottom_y - top_y, mask_color)
+        painter.fillRect(left_x,  top_y,     right_x - left_x, bottom_y - top_y,        mask_color)
 
-        # Guide lines
-        pen = QPen(QColor(255, 80, 80), 1, Qt.DashLine)
-        painter.setPen(pen)
-        painter.drawLine(ox, top_y,    ox + disp_w, top_y)        # top
-        painter.drawLine(ox, bottom_y, ox + disp_w, bottom_y)     # bottom
-        painter.drawLine(left_x,  oy, left_x,  oy + disp_h)      # left
-        painter.drawLine(right_x, oy, right_x, oy + disp_h)      # right
+        # Guide lines — highlight active (being dragged) guide
+        for name, coord, is_horiz in (
+            ("top",    top_y,    True),
+            ("bottom", bottom_y, True),
+            ("left",   left_x,   False),
+            ("right",  right_x,  False),
+        ):
+            color = QColor(255, 200, 0) if self._dragging == name else QColor(255, 80, 80)
+            pen = QPen(color, 1, Qt.DashLine)
+            painter.setPen(pen)
+            if is_horiz:
+                painter.drawLine(ox, coord, ox + disp_w, coord)
+            else:
+                painter.drawLine(coord, oy, coord, oy + disp_h)
 
 
 # ---------------------------------------------------------------------------
@@ -152,6 +286,10 @@ class ControlPanel(QWidget):
         super().__init__(parent)
         self.setMinimumWidth(220)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
+
+        # Stored image dimensions for dynamic max clamping
+        self._img_w: int = 0
+        self._img_h: int = 0
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 12, 12, 12)
@@ -217,13 +355,10 @@ class ControlPanel(QWidget):
         return self._spinboxes["right"].value()
 
     def set_image_limits(self, img_w: int, img_h: int) -> None:
-        """Clamp spinbox maximums based on image dimensions."""
-        max_h = max(0, img_h - 1)
-        max_w = max(0, img_w - 1)
-        self._spinboxes["top"].setMaximum(max_h)
-        self._spinboxes["bottom"].setMaximum(max_h)
-        self._spinboxes["left"].setMaximum(max_w)
-        self._spinboxes["right"].setMaximum(max_w)
+        """Store image dimensions and clamp all spinbox maximums."""
+        self._img_w = img_w
+        self._img_h = img_h
+        self._update_maximums()
 
     def reset_values(self) -> None:
         """Reset all spinboxes to 0."""
@@ -231,6 +366,7 @@ class ControlPanel(QWidget):
             spin.blockSignals(True)
             spin.setValue(0)
             spin.blockSignals(False)
+        self._update_maximums()
         self.margins_changed.emit(0, 0, 0, 0)
 
     def set_margin_values(self, top: int, bottom: int, left: int, right: int) -> None:
@@ -239,6 +375,7 @@ class ControlPanel(QWidget):
             self._spinboxes[name].blockSignals(True)
             self._spinboxes[name].setValue(val)
             self._spinboxes[name].blockSignals(False)
+        self._update_maximums()
         self.margins_changed.emit(top, bottom, left, right)
 
     def update_preview(self, result_image: Image.Image) -> None:
@@ -253,10 +390,29 @@ class ControlPanel(QWidget):
         self._preview_label.setPixmap(scaled)
 
     # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    def _update_maximums(self) -> None:
+        """Clamp each spinbox maximum so that opposing guides cannot cross."""
+        if self._img_w == 0 or self._img_h == 0:
+            return
+        W, H = self._img_w, self._img_h
+        top    = self._spinboxes["top"].value()
+        bottom = self._spinboxes["bottom"].value()
+        left   = self._spinboxes["left"].value()
+        right  = self._spinboxes["right"].value()
+        self._spinboxes["top"].setMaximum(max(0, H - bottom - 1))
+        self._spinboxes["bottom"].setMaximum(max(0, H - top - 1))
+        self._spinboxes["left"].setMaximum(max(0, W - right - 1))
+        self._spinboxes["right"].setMaximum(max(0, W - left - 1))
+
+    # ------------------------------------------------------------------
     # Slots
     # ------------------------------------------------------------------
 
     def _on_margin_changed(self) -> None:
+        self._update_maximums()
         self.margins_changed.emit(
             self._spinboxes["top"].value(),
             self._spinboxes["bottom"].value(),
@@ -278,6 +434,7 @@ class MainWindow(QMainWindow):
         self.resize(1100, 700)
 
         self._source_image: Image.Image | None = None
+        self._updating: bool = False  # guard against circular signal loops
 
         # --- Splitter ---
         self._splitter = QSplitter(Qt.Horizontal)
@@ -294,7 +451,6 @@ class MainWindow(QMainWindow):
         self._splitter.addWidget(self._canvas)
         self._splitter.addWidget(self._controls)
 
-        # Set initial 70:30 ratio (sizes in pixels; will adjust on show)
         self._splitter.setStretchFactor(0, 7)
         self._splitter.setStretchFactor(1, 3)
 
@@ -304,7 +460,7 @@ class MainWindow(QMainWindow):
         vbox.setContentsMargins(0, 0, 0, 0)
         vbox.setSpacing(0)
 
-        # Toolbar row (open button)
+        # Toolbar row
         toolbar_row = QHBoxLayout()
         toolbar_row.setContentsMargins(8, 4, 8, 4)
         self._open_btn = QPushButton("打开图片 (Open)")
@@ -325,6 +481,7 @@ class MainWindow(QMainWindow):
 
         # --- Connect signals ---
         self._controls.margins_changed.connect(self._on_margins_changed)
+        self._canvas.margins_changed.connect(self._on_canvas_margins_changed)
         self._open_btn.clicked.connect(self._on_open_clicked)
         self._save_btn.clicked.connect(self._on_save_clicked)
 
@@ -370,7 +527,6 @@ class MainWindow(QMainWindow):
         l = self._controls.left
         r = self._controls.right
         W, H = self._source_image.size
-        # Guard: margins must leave at least 1px gap each axis
         if l + r >= W or t + b >= H:
             return
         try:
@@ -384,7 +540,19 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
 
     def _on_margins_changed(self, top: int, bottom: int, left: int, right: int) -> None:
+        """SpinBox → Canvas: update guide positions and refresh preview."""
+        if self._updating:
+            return
         self._canvas.set_margins(top, bottom, left, right)
+        self._update_preview()
+
+    def _on_canvas_margins_changed(self, top: int, bottom: int, left: int, right: int) -> None:
+        """Canvas drag → SpinBox: update spinbox values without re-triggering canvas."""
+        if self._updating:
+            return
+        self._updating = True
+        self._controls.set_margin_values(top, bottom, left, right)
+        self._updating = False
         self._update_preview()
 
     def _on_open_clicked(self) -> None:
@@ -402,13 +570,11 @@ class MainWindow(QMainWindow):
         if self._source_image is None:
             return
         from PySide6.QtWidgets import QFileDialog, QMessageBox
-        import os
 
-        src_dir = ""
         path, _ = QFileDialog.getSaveFileName(
             self,
             "另存为",
-            src_dir,
+            "",
             "PNG Image (*.png)",
         )
         if not path:
