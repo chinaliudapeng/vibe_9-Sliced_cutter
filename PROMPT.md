@@ -39,18 +39,18 @@
 - [x] 提交 Git Commit。
 - [x] **由于涉及视觉布局，请在终端打印：”[Human Check] 请人类运行 python main.py 检查基础界面布局，确认无误后请手动在 PROMPT.md 中勾选 Phase 3 并继续”。然后退出！**
 
-## 🟢 Phase 4: 辅助线交互与双向绑定 (对应 spec 03)
-- [ ] 在左侧画板实现 4 条可拖拽的辅助线（Top, Bottom, Left, Right）及边界限制逻辑。
-- [ ] 实现 Signal/Slot：拖拽辅助线更新 SpinBox；修改 SpinBox 移动辅助线。触发任何改变时，调用核心算法更新右侧预览图。
-- [ ] 编写无头测试：用代码设定 SpinBox 的值，Assert 辅助线的坐标是否正确计算并位移；反之亦然。
-- [ ] 提交 Git Commit。
-- [ ] **由于涉及鼠标拖拽交互，请在终端打印：“[Human Check] 请人类运行程序测试拖拽手感和实时预览效果，确认无误后手动勾选 Phase 4”。然后退出！**
+## ✅ Phase 4: 辅助线交互与双向绑定 (对应 spec 03)
+- [x] 在左侧画板实现 4 条可拖拽的辅助线（Top, Bottom, Left, Right）及边界限制逻辑。
+- [x] 实现 Signal/Slot：拖拽辅助线更新 SpinBox；修改 SpinBox 移动辅助线。触发任何改变时，调用核心算法更新右侧预览图。
+- [x] 编写无头测试：用代码设定 SpinBox 的值，Assert 辅助线的坐标是否正确计算并位移；反之亦然。
+- [x] 提交 Git Commit。
+- [x] **由于涉及鼠标拖拽交互，请在终端打印：”[Human Check] 请人类运行程序测试拖拽手感和实时预览效果，确认无误后手动勾选 Phase 4”。然后退出！**
 
-## 🟢 Phase 5: 文件 I/O 与完整连调 (对应 spec 04)
-- [ ] 实现拖拽图片到窗口自动加载（`dragEnterEvent`, `dropEvent`）。
-- [ ] 实现“打开”、“覆盖保存”（需弹窗警告）、“另存为”系统对话框逻辑。
-- [ ] 提交 Git Commit。
-- [ ] **更新本文件，将 Phase 5 标记为 [x]，然后退出。**
+## ✅ Phase 5: 文件 I/O 与完整连调 (对应 spec 04)
+- [x] 实现拖拽图片到窗口自动加载（`dragEnterEvent`, `dropEvent`）。
+- [x] 实现”打开”、”覆盖保存”（需弹窗警告）、”另存为”系统对话框逻辑。
+- [x] 提交 Git Commit。
+- [x] **更新本文件，将 Phase 5 标记为 [x]，然后退出。**
 
 ## 🟢 Phase 6: 打包与分发 (对应 spec 05)
 - [ ] 编写打包构建脚本或在终端提供正确的 `pyinstaller -F -w main.py` 命令说明。
@@ -65,3 +65,5 @@
 - [Phase 1 完成] 创建了 `core/`, `ui/`, `tests/` 目录及各自的 `__init__.py`，生成 `requirements.txt`，并完成 Git 提交。下一步：执行 Phase 2，在 `core/image_processor.py` 中实现 9-slice 核心算法，并编写 pytest 测试验证输出尺寸。
 - [Phase 2 完成] 实现了 `core/image_processor.py`（Type B 9-slice 算法，提取4角+4条1像素边带+中心像素），编写了 15 个 pytest 测试（含参数化尺寸验证、角落像素验证、图像模式验证、文件加载验证），全部通过，已提交 Git。下一步：执行 Phase 3，使用 PySide6 搭建主窗口骨架。
 - [Phase 3 完成] 创建了 `main.py` 入口、`ui/main_window.py`（含 CanvasWidget + ControlPanel + QSplitter 70:30 + 4个QSpinBox + 预览标签 + 拖放支持 + SmoothTransformation 高DPI缩放），编写了 19 个无头 UI 测试全部通过，已提交 Git。[Human Check] 请人类运行 python main.py 检查基础界面布局，确认无误后请手动在 PROMPT.md 中勾选 Phase 3 并继续。下一步：等待人类视觉确认后执行 Phase 4（辅助线拖拽与双向绑定）。
+- [Phase 4 完成] 实现了 CanvasWidget 鼠标拖拽（mousePressEvent/mouseMoveEvent/mouseReleaseEvent），±6px hit-test，SizeVer/SizeHorCursor 光标反馈，拖拽时高亮辅助线（黄色）；ControlPanel 新增 _update_maximums 动态钳制对侧 SpinBox 上限；MainWindow 用 _updating 标志防止循环信号；新增 31 个无头测试全部通过（65/65），已提交 Git。[Human Check] 请人类运行 python main.py 测试拖拽手感和实时预览效果，确认无误后手动勾选 Phase 4。下一步：执行 Phase 5（文件 I/O 与完整连调）。
+- [Phase 5 完成] dragEnterEvent 严格验证扩展名(.png/.jpg/.jpeg)；_load_image 保存 _source_path；新增覆盖保存按钮(overwrite_btn)，弹出 QMessageBox.warning 确认，确认后将切图结果写入原路径；Save As 默认打开源文件目录；新增 20 个无头测试全部通过（85/85），已提交 Git。下一步：执行 Phase 6（PyInstaller 打包与分发）。
