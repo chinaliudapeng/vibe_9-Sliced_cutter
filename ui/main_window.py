@@ -433,11 +433,8 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("9-Slice Cutter")
         self.resize(1100, 700)
 
-        # Set window icon for taskbar display
-        import os
-        icon_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'icon', 'icon.ico')
-        if os.path.exists(icon_path):
-            self.setWindowIcon(QIcon(icon_path))
+        # Set window icon for both window title bar and taskbar display
+        self._setup_window_icon()
 
         self._source_image: Image.Image | None = None
         self._source_path: str | None = None  # path of the currently loaded file
@@ -521,6 +518,43 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
+
+    def _setup_window_icon(self) -> None:
+        """Set up window icon for title bar display with fallback handling."""
+        import os
+
+        # Try to find icon in multiple formats and locations
+        project_root = os.path.dirname(os.path.dirname(__file__))
+        icon_paths = [
+            os.path.join(project_root, 'icon', 'icon.ico'),
+            os.path.join(project_root, 'icon', 'icon.png'),
+        ]
+
+        icon_loaded = False
+        for icon_path in icon_paths:
+            if os.path.exists(icon_path):
+                try:
+                    icon = QIcon(icon_path)
+                    if not icon.isNull():
+                        # Set the window icon for title bar
+                        self.setWindowIcon(icon)
+                        icon_loaded = True
+                        break
+                except Exception:
+                    continue
+
+        # If no custom icon could be loaded, ensure we at least have a consistent default
+        if not icon_loaded:
+            # Create a simple colored icon as fallback
+            from PySide6.QtGui import QPixmap, QPainter
+            pixmap = QPixmap(32, 32)
+            pixmap.fill(QColor(70, 130, 180))  # Steel blue color
+            painter = QPainter(pixmap)
+            painter.setPen(QColor(255, 255, 255))
+            painter.drawText(pixmap.rect(), Qt.AlignCenter, "9S")
+            painter.end()
+            fallback_icon = QIcon(pixmap)
+            self.setWindowIcon(fallback_icon)
 
     def _load_image(self, path: str) -> None:
         """Load a source image from disk and reset the UI."""

@@ -15,10 +15,21 @@ def main() -> None:
     app.setApplicationName("9-Slice Cutter")
     app.setOrganizationName("VibeTool")
 
-    # Set application icon for taskbar and system tray
-    icon_path = os.path.join(os.path.dirname(__file__), 'icon', 'icon.ico')
-    if os.path.exists(icon_path):
-        app.setWindowIcon(QIcon(icon_path))
+    # Set application icon for taskbar, system tray, and default window icon
+    icon_paths = [
+        os.path.join(os.path.dirname(__file__), 'icon', 'icon.ico'),
+        os.path.join(os.path.dirname(__file__), 'icon', 'icon.png'),
+    ]
+
+    for icon_path in icon_paths:
+        if os.path.exists(icon_path):
+            try:
+                icon = QIcon(icon_path)
+                if not icon.isNull():
+                    app.setWindowIcon(icon)
+                    break
+            except Exception:
+                continue
 
     window = MainWindow()
     window.show()
