@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
     QSizePolicy, QFrame,
 )
 from PySide6.QtCore import Qt, Signal, QSize
-from PySide6.QtGui import QPixmap, QPainter, QColor, QPen, QCursor
+from PySide6.QtGui import QPixmap, QPainter, QColor, QPen, QCursor, QIcon
 
 from core.image_processor import slice_image
 from PIL import Image
@@ -432,6 +432,12 @@ class MainWindow(QMainWindow):
         super().__init__(parent)
         self.setWindowTitle("9-Slice Cutter")
         self.resize(1100, 700)
+
+        # Set window icon for taskbar display
+        import os
+        icon_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'icon', 'icon.ico')
+        if os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))
 
         self._source_image: Image.Image | None = None
         self._source_path: str | None = None  # path of the currently loaded file

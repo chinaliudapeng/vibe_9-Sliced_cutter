@@ -6,8 +6,8 @@ echo Building 9-Slice Cutter for Windows...
 echo =====================================
 
 REM Check if icon file exists
-if not exist "icon\icon.png" (
-    echo ERROR: Icon file icon\icon.png not found!
+if not exist "icon\icon.ico" (
+    echo ERROR: Icon file icon\icon.ico not found!
     pause
     exit /b 1
 )
@@ -16,7 +16,7 @@ REM Run PyInstaller with icon support
 python -m PyInstaller ^
     -F ^
     -w ^
-    --icon="icon\icon.png" ^
+    --icon="icon\icon.ico" ^
     --name="9SliceCutter" ^
     main.py
 
