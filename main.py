@@ -12,8 +12,23 @@ from ui.main_window import MainWindow
 def main() -> None:
     # Qt6 handles High-DPI natively; no explicit AA_EnableHighDpiScaling needed.
     app = QApplication(sys.argv)
+
+    # Enhanced application identification for better Windows taskbar integration
     app.setApplicationName("9-Slice Cutter")
+    app.setApplicationDisplayName("9-Slice Cutter")  # Displayed name in taskbar
+    app.setApplicationVersion("1.0.0")
     app.setOrganizationName("VibeTool")
+
+    # Windows-specific App User Model ID for proper taskbar grouping and icon display
+    if sys.platform == 'win32':
+        try:
+            import ctypes
+            # Set App User Model ID for Windows taskbar recognition
+            app_id = "VibeTool.9SliceCutter.Desktop.1.0"
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
+        except (ImportError, AttributeError, OSError):
+            # Silently continue if Windows API is not available
+            pass
 
     # Set application icon for taskbar, system tray, and default window icon
     icon_paths = [
