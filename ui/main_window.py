@@ -458,7 +458,7 @@ class MainWindow(QMainWindow):
         # Central widget wrapper
         central = QWidget()
         vbox = QVBoxLayout(central)
-        vbox.setContentsMargins(0, 0, 0, 0)
+        vbox.setContentsMargins(10, 10, 10, 10)  # Edge margins: left=10px, bottom=10px per spec
         vbox.setSpacing(0)
 
         # Toolbar row

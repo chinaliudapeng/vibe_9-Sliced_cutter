@@ -28,3 +28,8 @@ To ensure the tool looks crisp on both standard monitors and High-DPI displays (
   - `left` must be strictly less than `W - right` (leaving at least 1 pixel).
   - `top` must be strictly less than `H - bottom` (leaving at least 1 pixel).
 - `QSpinBox` maximum values must be clamped dynamically based on the current loaded image dimensions.
+
+## 5. 边缘规则
+
+- 图片预览的画布左边缘距离app窗口左侧border距离为10像素.
+- 图片预览的画布下边缘距离app窗口下方border距离为10像素.
