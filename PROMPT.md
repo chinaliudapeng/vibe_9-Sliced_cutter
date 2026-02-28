@@ -23,21 +23,21 @@
 - [x] 提交 Git Commit (feat: project initialization)。
 - [x] **更新本文件，将 Phase 1 标记为 [x]，然后退出。**
 
-## 🟢 Phase 2: 核心图像算法与数学级验证 (对应 spec 02)
-- [ ] 在 `core/image_processor.py` 中实现“切除中心十字并保留 1 像素拉伸带”的 `Pillow` 处理逻辑。
-- [ ] 在 `tests/test_image_processor.py` 中编写自动化测试：
-  - [ ] Mock 一张确切尺寸的图片。
-  - [ ] 运行切图函数，Assert 新图片的尺寸是否严格等于 `(Left+Right+1, Top+Bottom+1)`。
-  - [ ] 运行 `pytest tests/test_image_processor.py` 确保测试通过。
-- [ ] 提交 Git Commit。
-- [ ] **更新本文件，将 Phase 2 标记为 [x]，然后退出。**
+## ✅ Phase 2: 核心图像算法与数学级验证 (对应 spec 02)
+- [x] 在 `core/image_processor.py` 中实现”切除中心十字并保留 1 像素拉伸带”的 `Pillow` 处理逻辑。
+- [x] 在 `tests/test_image_processor.py` 中编写自动化测试：
+  - [x] Mock 一张确切尺寸的图片。
+  - [x] 运行切图函数，Assert 新图片的尺寸是否严格等于 `(Left+Right+1, Top+Bottom+1)`。
+  - [x] 运行 `pytest tests/test_image_processor.py` 确保测试通过。
+- [x] 提交 Git Commit。
+- [x] **更新本文件，将 Phase 2 标记为 [x]，然后退出。**
 
-## 🟢 Phase 3: GUI 基础骨架与无头测试 (对应 spec 03)
-- [ ] 使用 `PySide6` 搭建主窗口 `main.py` 和 `ui/main_window.py`。
-- [ ] 实现 `QSplitter` 左右分栏，左侧为图片画板（需支持高DPI和等比缩放），右侧为包含 4 个 `QSpinBox` 的控制面板。
-- [ ] 编写测试脚本（实例化 MainWindow 但不 `show()`），Assert UI 组件是否成功挂载。
-- [ ] 提交 Git Commit。
-- [ ] **由于涉及视觉布局，请在终端打印：“[Human Check] 请人类运行 python main.py 检查基础界面布局，确认无误后请手动在 PROMPT.md 中勾选 Phase 3 并继续”。然后退出！**
+## ✅ Phase 3: GUI 基础骨架与无头测试 (对应 spec 03)
+- [x] 使用 `PySide6` 搭建主窗口 `main.py` 和 `ui/main_window.py`。
+- [x] 实现 `QSplitter` 左右分栏，左侧为图片画板（需支持高DPI和等比缩放），右侧为包含 4 个 `QSpinBox` 的控制面板。
+- [x] 编写测试脚本（实例化 MainWindow 但不 `show()`），Assert UI 组件是否成功挂载。
+- [x] 提交 Git Commit。
+- [x] **由于涉及视觉布局，请在终端打印：”[Human Check] 请人类运行 python main.py 检查基础界面布局，确认无误后请手动在 PROMPT.md 中勾选 Phase 3 并继续”。然后退出！**
 
 ## 🟢 Phase 4: 辅助线交互与双向绑定 (对应 spec 03)
 - [ ] 在左侧画板实现 4 条可拖拽的辅助线（Top, Bottom, Left, Right）及边界限制逻辑。
@@ -63,3 +63,5 @@
 *(AI：请在下方记录你每次退出的原因或遇到的严重问题)*
 - [初始化日志] 项目准备就绪，等待首次执行。
 - [Phase 1 完成] 创建了 `core/`, `ui/`, `tests/` 目录及各自的 `__init__.py`，生成 `requirements.txt`，并完成 Git 提交。下一步：执行 Phase 2，在 `core/image_processor.py` 中实现 9-slice 核心算法，并编写 pytest 测试验证输出尺寸。
+- [Phase 2 完成] 实现了 `core/image_processor.py`（Type B 9-slice 算法，提取4角+4条1像素边带+中心像素），编写了 15 个 pytest 测试（含参数化尺寸验证、角落像素验证、图像模式验证、文件加载验证），全部通过，已提交 Git。下一步：执行 Phase 3，使用 PySide6 搭建主窗口骨架。
+- [Phase 3 完成] 创建了 `main.py` 入口、`ui/main_window.py`（含 CanvasWidget + ControlPanel + QSplitter 70:30 + 4个QSpinBox + 预览标签 + 拖放支持 + SmoothTransformation 高DPI缩放），编写了 19 个无头 UI 测试全部通过，已提交 Git。[Human Check] 请人类运行 python main.py 检查基础界面布局，确认无误后请手动在 PROMPT.md 中勾选 Phase 3 并继续。下一步：等待人类视觉确认后执行 Phase 4（辅助线拖拽与双向绑定）。
